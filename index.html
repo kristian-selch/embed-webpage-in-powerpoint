@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embed webpage in PowerPoint</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>
+  :root {
+    --ink: #1c2530;
+    --muted: #5d6b7a;
+    --line: #d5dce3;
+    --paper: #f7f9fb;
+    --accent: #1f4a7a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper);
+    font: 13px/1.4 -apple-system, "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+
+  /* Opsætning (tom tilstand) */
+  #setup { height: 100%; display: flex; flex-direction: column; justify-content: center;
+    padding: 0 8%; gap: 10px; }
+  #setup h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  #setup p { margin: 0 0 6px; color: var(--muted); max-width: 60ch; }
+  .row { display: flex; gap: 6px; }
+  input[type=url], select { font: inherit; padding: 6px 8px; border: 1px solid var(--line);
+    border-radius: 4px; background: #fff; color: var(--ink); }
+  input[type=url] { flex: 1; min-width: 0; }
+  button { font: inherit; padding: 6px 12px; border: 1px solid var(--accent); border-radius: 4px;
+    background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap; }
+  button.quiet { background: #fff; color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .error { color: #a3261b; min-height: 1.4em; }
+
+  /* Visning */
+  #viewer { position: absolute; inset: 0; display: none; flex-direction: column; }
+  #toolbar { display: flex; gap: 6px; padding: 6px; background: #fff; border-bottom: 1px solid var(--line); }
+  #stage { position: relative; flex: 1; overflow: hidden; }
+  #hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 20px; text-align: center; color: var(--muted); }
+  #frame { position: absolute; top: 0; left: 0; border: 0; background: transparent;
+    transform-origin: 0 0; }
+
+  /* Under slideshow: kun websiden */
+  body.presenting #toolbar, body.presenting #hint { display: none; }
+</style>
+</head>
+<body>
+
+<section id="setup">
+  <h1>Vis en webside på denne slide</h1>
+  <p>Indsæt adressen. Siden vises live, også under præsentationen.</p>
+  <div class="row">
+    <input id="setupUrl" type="url" placeholder="https://selchmedia.dk" autocomplete="off">
+    <button id="setupGo">Vis side</button>
+  </div>
+  <div class="error" id="setupError" role="alert"></div>
+</section>
+
+<section id="viewer">
+  <div id="toolbar">
+    <input id="barUrl" type="url" aria-label="Adresse" autocomplete="off">
+    <select id="zoom" aria-label="Zoom">
+      <option value="0.5">50 %</option>
+      <option value="0.67">67 %</option>
+      <option value="0.75">75 %</option>
+      <option value="0.9">90 %</option>
+      <option value="1" selected>100 %</option>
+      <option value="1.25">125 %</option>
+      <option value="1.5">150 %</option>
+    </select>
+    <button id="barGo">Vis side</button>
+    <button id="reload" class="quiet">Genindlæs</button>
+  </div>
+  <div id="stage">
+    <div id="hint">Forbliver boksen tom, tillader siden ikke at blive vist inde i andre sider.<br>
+      Det kan ikke omgås herfra. Prøv en anden adresse, fx en embed-adresse.</div>
+    <iframe id="frame" title="Webside" allow="autoplay; fullscreen; clipboard-read; clipboard-write"
+      referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+</section>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let state = { url: "", zoom: 1 };
+  let officeReady = false;
+
+  function normalize(raw) {
+    let u = (raw || "").trim();
+    if (!u) return { error: "Skriv en adresse." };
+    if (!/^[a-z]+:\/\//i.test(u)) u = "https://" + u;
+    if (/^http:\/\//i.test(u)) return { error: "Adressen skal starte med https://. PowerPoint blokerer usikre http-sider." };
+    try { return { url: new URL(u).href }; } catch { return { error: "Adressen er ikke gyldig." }; }
+  }
+
+  function applyZoom() {
+    const f = $("frame"), z = state.zoom;
+    f.style.width = (100 / z) + "%";
+    f.style.height = (100 / z) + "%";
+    f.style.transform = `scale(${z})`;
+    $("zoom").value = String(z);
+  }
+
+  function render() {
+    if (!state.url) {
+      $("setup").style.display = "flex";
+      $("viewer").style.display = "none";
+      return;
+    }
+    $("setup").style.display = "none";
+    $("viewer").style.display = "flex";
+    $("barUrl").value = state.url;
+    if ($("frame").getAttribute("src") !== state.url) $("frame").setAttribute("src", state.url);
+    applyZoom();
+  }
+
+  function save() {
+    if (!officeReady) return;
+    const s = Office.context.document.settings;
+    s.set("url", state.url);
+    s.set("zoom", state.zoom);
+    s.saveAsync();
+  }
+
+  function go(raw, errorEl) {
+    const r = normalize(raw);
+    if (r.error) { if (errorEl) errorEl.textContent = r.error; else alert(r.error); return; }
+    if (errorEl) errorEl.textContent = "";
+    state.url = r.url;
+    save();
+    render();
+  }
+
+  $("setupGo").onclick = () => go($("setupUrl").value, $("setupError"));
+  $("setupUrl").onkeydown = e => { if (e.key === "Enter") $("setupGo").click(); };
+  $("barGo").onclick = () => go($("barUrl").value, null);
+  $("barUrl").onkeydown = e => { if (e.key === "Enter") $("barGo").click(); };
+  $("reload").onclick = () => { $("frame").setAttribute("src", "about:blank"); setTimeout(() => $("frame").setAttribute("src", state.url), 50); };
+  $("zoom").onchange = e => { state.zoom = parseFloat(e.target.value) || 1; applyZoom(); save(); };
+
+  function setView(view) {
+    // "read" = slideshow, "edit" = redigering
+    document.body.classList.toggle("presenting", view === "read");
+  }
+
+  if (window.Office) {
+    Office.onReady(() => {
+      officeReady = true;
+      const s = Office.context.document.settings;
+      state.url = s.get("url") || "";
+      state.zoom = parseFloat(s.get("zoom")) || 1;
+      render();
+      try {
+        Office.context.document.getActiveViewAsync(r => { if (r.status === "succeeded") setView(r.value); });
+        Office.context.document.addHandlerAsync(Office.EventType.ActiveViewChanged, e => setView(e.activeView));
+      } catch (e) { /* ActiveView ikke understøttet: værktøjslinjen bliver bare stående */ }
+    });
+  } else {
+    render(); // åbnet i almindelig browser til test
+  }
+</script>
+</body>
+</html>

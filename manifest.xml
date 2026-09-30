@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sideloades lokalt i PowerPoints wef-mappe. Hentes ikke fra GitHub Pages.
+-->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:type="ContentApp">
+  <Id>bfe8e101-9117-4d00-8681-9581d25a322a</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Selch Media</ProviderName>
+  <DefaultLocale>da-DK</DefaultLocale>
+  <DisplayName DefaultValue="Embed webpage in PowerPoint"/>
+  <Description DefaultValue="Viser en live webside direkte på en slide."/>
+  <IconUrl DefaultValue="https://kristian-selch.github.io/embed-webpage-in-powerpoint/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://kristian-selch.github.io/embed-webpage-in-powerpoint/icon-64.png"/>
+  <SupportUrl DefaultValue="https://kristian-selch.github.io/embed-webpage-in-powerpoint/"/>
+  <AppDomains>
+    <AppDomain>https://kristian-selch.github.io</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://kristian-selch.github.io/embed-webpage-in-powerpoint/index.html"/>
+    <RequestedWidth>960</RequestedWidth>
+    <RequestedHeight>540</RequestedHeight>
+  </DefaultSettings>
+  <Permissions>Restricted</Permissions>
+  <AllowSnapshot>true</AllowSnapshot>
+</OfficeApp>
