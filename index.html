@@ -34,7 +34,11 @@
 
   /* Visning */
   #viewer { position: absolute; inset: 0; display: none; flex-direction: column; }
-  #toolbar { display: none; gap: 6px; padding: 6px; background: #fff; border-bottom: 1px solid var(--line); }
+  #toolbar { display: none; gap: 6px; padding: 6px; background: #fff; border-bottom: 1px solid var(--line);
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3; transform: translateY(-110%);
+    transition: transform .12s ease; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  #hotzone { display: none; position: absolute; top: 0; left: 0; right: 0; height: 12px; z-index: 2; }
+  #hotzone:hover + #toolbar, #toolbar:hover, #toolbar:focus-within { transform: none; }
   #stage { position: relative; flex: 1; overflow: hidden; }
   #hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     padding: 20px; text-align: center; color: var(--muted); }
@@ -43,6 +47,7 @@
 
   /* Værktøjslinjen er skjult som standard og vises kun når redigering er bekræftet (undgår flash under transition) */
   body.editing #toolbar { display: flex; }
+  body.editing #hotzone { display: block; }
   body.presenting #hint { display: none; }
 </style>
 </head>
@@ -59,6 +64,7 @@
 </section>
 
 <section id="viewer">
+  <div id="hotzone"></div>
   <div id="toolbar">
     <input id="barUrl" type="url" aria-label="Adresse" autocomplete="off">
     <select id="zoom" aria-label="Zoom">
