@@ -34,15 +34,16 @@
 
   /* Visning */
   #viewer { position: absolute; inset: 0; display: none; flex-direction: column; }
-  #toolbar { display: flex; gap: 6px; padding: 6px; background: #fff; border-bottom: 1px solid var(--line); }
+  #toolbar { display: none; gap: 6px; padding: 6px; background: #fff; border-bottom: 1px solid var(--line); }
   #stage { position: relative; flex: 1; overflow: hidden; }
   #hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     padding: 20px; text-align: center; color: var(--muted); }
   #frame { position: absolute; top: 0; left: 0; border: 0; background: transparent;
     transform-origin: 0 0; }
 
-  /* Under slideshow: kun websiden */
-  body.presenting #toolbar, body.presenting #hint { display: none; }
+  /* Værktøjslinjen er skjult som standard og vises kun når redigering er bekræftet (undgår flash under transition) */
+  body.editing #toolbar { display: flex; }
+  body.presenting #hint { display: none; }
 </style>
 </head>
 <body>
@@ -141,6 +142,7 @@
   function setView(view) {
     // "read" = slideshow, "edit" = redigering
     document.body.classList.toggle("presenting", view === "read");
+    document.body.classList.toggle("editing", view === "edit");
   }
 
   if (window.Office) {
@@ -151,11 +153,12 @@
       state.zoom = parseFloat(s.get("zoom")) || 1;
       render();
       try {
-        Office.context.document.getActiveViewAsync(r => { if (r.status === "succeeded") setView(r.value); });
+        Office.context.document.getActiveViewAsync(r => setView(r.status === "succeeded" ? r.value : "edit"));
         Office.context.document.addHandlerAsync(Office.EventType.ActiveViewChanged, e => setView(e.activeView));
-      } catch (e) { /* ActiveView ikke understøttet: værktøjslinjen bliver bare stående */ }
+      } catch (e) { setView("edit"); /* ActiveView ikke understøttet: vis værktøjslinjen */ }
     });
   } else {
+    setView("edit");
     render(); // åbnet i almindelig browser til test
   }
 </script>
